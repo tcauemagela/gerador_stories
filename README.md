@@ -1,12 +1,24 @@
-# 📝 Gerador de Histórias de Usuário com IA
+# 📝 Gerador de Histórias de Usuário com IA - V2
 
-Sistema web desenvolvido com Streamlit que utiliza IA (Claude API da Anthropic) para gerar histórias de usuário técnicas no formato de tasks.
+Sistema web desenvolvido com Streamlit que utiliza IA (Claude API da Anthropic) para gerar histórias de usuário técnicas no formato de tasks, com suporte a especificações de API dinâmicas baseadas em métodos HTTP REST.
 
 ## 🎯 Objetivo
 
 Automatizar a criação de histórias de usuário técnicas bem estruturadas, economizando tempo e garantindo consistência na documentação de tarefas de desenvolvimento.
 
 ## ✨ Funcionalidades
+
+### 🆕 NOVIDADES V2 - Especificações de API Dinâmicas
+- ✅ **Seleção de Método HTTP:** GET, POST, PUT, PATCH, DELETE
+- ✅ **Campos Dinâmicos por Método:**
+  - **GET:** Query Params (filtros, paginação, ordenação)
+  - **POST:** Body (dados para criação)
+  - **PUT:** Path Param + Body completo (substituição)
+  - **PATCH:** Path Param + Body parcial (atualização)
+  - **DELETE:** Path Param (identificador)
+- ✅ **Interpretação REST Automática:** IA valida compatibilidade entre método e campos
+- ✅ **Visualização Aprimorada:** Blocos de código JSON com syntax highlighting
+- ✅ **Sistema de Debug:** Stack trace completo para identificação rápida de erros
 
 ### ETAPA 1 - Criação
 - ✅ Formulário intuitivo com múltiplas entradas dinâmicas
