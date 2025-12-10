@@ -30,12 +30,13 @@ class AIService:
     def generate_story(
         self,
         titulo: str,
-        regras_negocio: List[str],
-        apis_servicos: List[str],
-        objetivos: Dict[str, Any],
-        complexidade: int,
-        criterios_aceitacao: List[str],
-        api_specs: Dict[str, str] = None
+        regras_negocio: List[str] = None,
+        apis_servicos: List[str] = None,
+        objetivos: Dict[str, Any] = None,
+        complexidade: int = 5,
+        criterios_aceitacao: List[str] = None,
+        api_specs: Dict[str, str] = None,
+        form_data: Dict[str, Any] = None
     ) -> str:
         """
         Gera história técnica usando Claude API.
@@ -48,6 +49,7 @@ class AIService:
             complexidade: Pontos de complexidade (1-21)
             criterios_aceitacao: Lista de critérios de aceitação
             api_specs: Especificações da API (endpoint, parâmetros, etc.)
+            form_data: Dados completos do formulário (para novos tipos de história)
 
         Returns:
             História gerada em formato Markdown
@@ -58,28 +60,76 @@ class AIService:
             APIConnectionError: Se houver erro de conexão
             Exception: Para outros erros da API
         """
-        prompt = self._build_prompt(
-            titulo=titulo,
-            regras_negocio=regras_negocio,
-            apis_servicos=apis_servicos,
-            objetivos=objetivos,
-            complexidade=complexidade,
-            criterios_aceitacao=criterios_aceitacao,
-            api_specs=api_specs
-        )
+        # Verificar se é um novo tipo de história (Spike, Kaizen, Fix)
+        value_area = form_data.get('value_area', 'Business') if form_data else 'Business'
+
+        if value_area == 'Spike':
+            prompt = self._build_spike_prompt(form_data)
+        elif value_area == 'Kaizen':
+            prompt = self._build_kaizen_prompt(form_data)
+        elif value_area == 'Fix/Bug/Incidente':
+            prompt = self._build_fix_prompt(form_data)
+        else:
+            prompt = self._build_prompt(
+                titulo=titulo,
+                regras_negocio=regras_negocio or [],
+                apis_servicos=apis_servicos or [],
+                objetivos=objetivos or {},
+                complexidade=complexidade,
+                criterios_aceitacao=criterios_aceitacao or [],
+                api_specs=api_specs,
+                form_data=form_data
+            )
 
         try:
-            response = self.client.messages.create(
-                model=self.model,
-                max_tokens=self.max_tokens,
-                timeout=self.timeout,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            )
+            # Verificar se há imagens para enviar (Fix/Bug/Incidente)
+            fix_images = form_data.get('fix_images', []) if form_data else []
+
+            if fix_images and value_area == 'Fix/Bug/Incidente':
+                # Usar API multimodal com imagens
+                content = []
+
+                # Adicionar cada imagem como content block
+                for img in fix_images:
+                    content.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": img.get("type", "image/png"),
+                            "data": img.get("data", "")
+                        }
+                    })
+
+                # Adicionar o prompt de texto
+                content.append({
+                    "type": "text",
+                    "text": prompt
+                })
+
+                response = self.client.messages.create(
+                    model=self.model,
+                    max_tokens=self.max_tokens,
+                    timeout=self.timeout,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": content
+                        }
+                    ]
+                )
+            else:
+                # Requisição normal sem imagens
+                response = self.client.messages.create(
+                    model=self.model,
+                    max_tokens=self.max_tokens,
+                    timeout=self.timeout,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ]
+                )
 
             # Extrai texto da resposta
             if response.content and len(response.content) > 0:
@@ -110,7 +160,8 @@ class AIService:
         objetivos: Dict[str, Any],
         complexidade: int,
         criterios_aceitacao: List[str],
-        api_specs: Dict[str, str] = None
+        api_specs: Dict[str, str] = None,
+        form_data: Dict[str, Any] = None
     ) -> str:
         """
         Constrói prompt estruturado profissional para Claude API.
@@ -124,10 +175,14 @@ class AIService:
             complexidade: Pontos de complexidade
             criterios_aceitacao: Lista de critérios
             api_specs: Especificações da API
+            form_data: Dados completos do formulário
 
         Returns:
             Prompt formatado em XML
         """
+        # Extrair dependências se existirem
+        has_dependencies = form_data.get('has_dependencies', False) if form_data else False
+        dependencies = form_data.get('dependencies', '') if form_data else ''
         # Formata listas em items
         regras_formatadas = "\n".join(f"- {regra}" for regra in regras_negocio)
         apis_formatadas = "\n".join(f"- {api}" for api in apis_servicos)
@@ -248,6 +303,10 @@ REGRAS ABSOLUTAS (NUNCA VIOLAR):
 <especificacoes_api>
 {api_specs_formatado}
 </especificacoes_api>''' if api_specs_formatado else ''}
+{f'''
+<dependencias>
+{dependencies}
+</dependencias>''' if has_dependencies and dependencies else ''}
 </input_data>
 
 <mandatory_structure>
@@ -323,7 +382,14 @@ SUA HISTÓRIA DEVE CONTER EXATAMENTE ESTAS SEÇÕES (SEM EMOJIS):
    2. Cenario de erro/excecao: [descrição objetiva]
    3. Cenario edge case: [descrição objetiva]
 
-9. COMPLEXIDADE (nível ###)
+9. DEPENDÊNCIAS (nível ### - APENAS SE <dependencias> FORNECIDAS)
+   Formato: ### Dependencias
+   Conteúdo: Se a tag <dependencias> estiver presente nos dados de entrada:
+   - Listar todas as dependências de outras equipes/sistemas
+   - Indicar impacto no cronograma se aplicável
+   - Sugerir pontos de comunicação necessários
+
+10. COMPLEXIDADE (nível ###)
    Formato: ### Complexidade
    Conteúdo:
    Pontos: {complexidade}
@@ -380,21 +446,39 @@ INSTRUÇÕES DE GERAÇÃO:
 1. ANÁLISE:
    - Leia TODOS os inputs fornecidos
    - Identifique o tipo de implementação
+   - Compreenda o CONTEXTO DE NEGÓCIO por trás da tarefa
 
-2. CONTEXTO:
-   - Infira situação atual BASEADO nos dados fornecidos
-   - Não invente problemas não relacionados
+2. CONTEXTO (ENRIQUECER COM ANÁLISE):
+   - Descreva a situação atual de forma CONTEXTUALIZADA
+   - Explique POR QUE essa funcionalidade é necessária
+   - Conecte com o valor de negócio que será entregue
+   - Mantenha-se fiel aos dados mas ELABORE o contexto de forma profissional
+   - EXEMPLO: Se o input é "API de bairros", contextualize: "O sistema atual não possui capacidade de consulta geográfica granular, limitando a personalização de ofertas por região..."
 
-3. DESCRIÇÃO:
-   - Seja objetiva e direta
-   - Use APENAS informações fornecidas
-   - Não adicione tecnologias não mencionadas
+3. DESCRIÇÃO (PROFISSIONAL E ELABORADA):
+   - Use linguagem técnica profissional
+   - EXPANDA os pontos fornecidos com detalhamento técnico relevante
+   - Não adicione tecnologias não mencionadas, mas DETALHE as mencionadas
+   - Para cada regra de negócio, explique seu impacto técnico
+   - Para cada API, descreva sua integração e uso no fluxo
 
-3.1. ESPECIFICAÇÕES DE API (SE FORNECIDAS):
+4. CRITÉRIOS DE ACEITAÇÃO (COMPLETOS E TESTÁVEIS):
+   - TRANSFORME critérios simples em critérios GHERKIN completos
+   - Adicione cenários de ERRO e EDGE CASES baseados nas regras
+   - Cada critério deve ser VERIFICÁVEL e MENSURÁVEL
+   - Inclua validações de dados, performance esperada, e tratamento de exceções
+
+5. ESPECIFICAÇÕES DE API (SE FORNECIDAS):
    - Verifique se há tag <especificacoes_api> nos inputs
    - Se presente, OBRIGATORIAMENTE criar subseção "#### Especificacoes da API"
    - Incluir TODOS os campos fornecidos
    - Usar blocos de código ```json para JSONs
+   - Detalhar códigos de erro HTTP esperados (400, 401, 404, 500)
+
+6. CENÁRIOS DE TESTE (ABRANGENTES):
+   - Crie cenários que REALMENTE testem a funcionalidade
+   - Inclua dados de exemplo quando relevante
+   - Cubra fluxos principais, alternativos e de exceção
    - Não omitir nenhum detalhe
 
 3.2. INTERPRETAÇÃO DE MÉTODOS HTTP:
@@ -835,4 +919,328 @@ Retorne APENAS JSON array neste formato:
 </important>
 """
 
+        return prompt.strip()
+
+    def _build_spike_prompt(self, form_data: Dict[str, Any]) -> str:
+        """
+        Constrói prompt para histórias do tipo Spike (exploratórias).
+
+        Args:
+            form_data: Dados do formulário Spike
+
+        Returns:
+            Prompt formatado
+        """
+        titulo = form_data.get('titulo', '')
+        pergunta = form_data.get('spike_pergunta', '')
+        alternativas = form_data.get('spike_alternativas', [])
+        timebox = form_data.get('spike_timebox', 8)
+        output = form_data.get('spike_output', '')
+        criterios_sucesso = form_data.get('spike_criterios_sucesso', [])
+
+        alternativas_formatadas = "\n".join(f"- {alt}" for alt in alternativas if alt)
+        criterios_formatados = "\n".join(f"- {crit}" for crit in criterios_sucesso if crit)
+
+        prompt = f"""
+<task>
+Você é um Product Owner sênior especializado em metodologias ágeis.
+Gere uma história de usuário do tipo SPIKE (exploratória/investigação) completa e profissional.
+</task>
+
+<critical_rules>
+1. NUNCA ADICIONAR EMOJIS
+2. SER OBJETIVO E TÉCNICO
+3. FOCAR NA INVESTIGAÇÃO, NÃO NA IMPLEMENTAÇÃO
+4. DEFINIR CLARAMENTE O QUE SERÁ ENTREGUE AO FINAL
+</critical_rules>
+
+<input_data>
+<titulo>{titulo}</titulo>
+<pergunta_hipotese>{pergunta}</pergunta_hipotese>
+<alternativas_investigar>
+{alternativas_formatadas}
+</alternativas_investigar>
+<timebox_horas>{timebox}</timebox_horas>
+<output_esperado>{output}</output_esperado>
+<criterios_sucesso>
+{criterios_formatados}
+</criterios_sucesso>
+</input_data>
+
+<mandatory_structure>
+## [Título]
+
+### Contexto
+Descreva o cenário que motivou esta investigação. Por que precisamos investigar isso?
+Qual incerteza técnica ou de negócio estamos tentando resolver?
+
+### Pergunta/Hipótese
+Formule claramente a pergunta principal que esta spike deve responder.
+Se aplicável, liste hipóteses secundárias a serem validadas.
+
+### Escopo da Investigação
+Liste especificamente o que SERÁ e o que NÃO SERÁ investigado.
+Defina limites claros para manter o foco.
+
+### Alternativas a Avaliar
+Para cada alternativa fornecida, descreva:
+- O que é a tecnologia/abordagem
+- Prós esperados
+- Contras potenciais
+- Critérios de avaliação
+
+### Timebox
+Tempo máximo: {timebox} horas
+- Defina checkpoints intermediários
+- Estabeleça momento de decisão go/no-go
+
+### Entregáveis
+Output esperado: {output}
+Liste especificamente o que será produzido:
+- Documentação
+- POC (se aplicável)
+- Recomendação final
+
+### Critérios de Sucesso
+Defina quando a spike será considerada bem-sucedida.
+Liste critérios mensuráveis e verificáveis.
+
+### Próximos Passos Potenciais
+Descreva os possíveis caminhos após a conclusão:
+- Se a hipótese for validada
+- Se a hipótese for invalidada
+- Se precisar de mais investigação
+</mandatory_structure>
+
+Retorne APENAS o Markdown da história, sem texto adicional.
+"""
+        return prompt.strip()
+
+    def _build_kaizen_prompt(self, form_data: Dict[str, Any]) -> str:
+        """
+        Constrói prompt para histórias do tipo Kaizen (melhoria contínua).
+
+        Args:
+            form_data: Dados do formulário Kaizen
+
+        Returns:
+            Prompt formatado
+        """
+        titulo = form_data.get('titulo', '')
+        processo = form_data.get('kaizen_processo', '')
+        situacao_atual = form_data.get('kaizen_situacao_atual', '')
+        meta = form_data.get('kaizen_meta', '')
+        metricas = form_data.get('kaizen_metricas', [])
+        impacto = form_data.get('kaizen_impacto', '')
+        complexidade = form_data.get('complexidade', 5)
+
+        metricas_formatadas = "\n".join(f"- {m}" for m in metricas if m)
+
+        prompt = f"""
+<task>
+Você é um Product Owner sênior especializado em metodologias ágeis e melhoria contínua.
+Gere uma história de usuário do tipo KAIZEN (melhoria contínua) completa e profissional.
+</task>
+
+<critical_rules>
+1. NUNCA ADICIONAR EMOJIS
+2. FOCAR EM MÉTRICAS E RESULTADOS MENSURÁVEIS
+3. COMPARAR ESTADO ATUAL vs ESTADO DESEJADO
+4. SER ESPECÍFICO SOBRE O IMPACTO ESPERADO
+</critical_rules>
+
+<input_data>
+<titulo>{titulo}</titulo>
+<processo_area>{processo}</processo_area>
+<situacao_atual>{situacao_atual}</situacao_atual>
+<meta_desejada>{meta}</meta_desejada>
+<metricas_sucesso>
+{metricas_formatadas}
+</metricas_sucesso>
+<impacto_esperado>{impacto}</impacto_esperado>
+<complexidade>{complexidade}</complexidade>
+</input_data>
+
+<mandatory_structure>
+## [Título]
+
+### Contexto
+Descreva o processo/área atual e por que precisa ser melhorado.
+Conecte com o impacto no time e na entrega de valor.
+
+### Situação Atual (Baseline)
+Detalhe o estado atual com dados concretos:
+- Métricas atuais (tempo, taxa de erro, etc.)
+- Problemas identificados
+- Impacto negativo no time/processo
+
+### Meta Desejada
+Descreva claramente o estado futuro esperado:
+- Métricas alvo
+- Melhorias específicas
+- Benefícios esperados
+
+### Plano de Melhoria
+Liste as ações necessárias para atingir a meta:
+1. Ação 1 - Descrição e impacto esperado
+2. Ação 2 - Descrição e impacto esperado
+(baseado no processo descrito)
+
+### Métricas de Sucesso
+Defina como medir o sucesso da melhoria:
+- Métrica principal
+- Métricas secundárias
+- Frequência de medição
+
+### Impacto Esperado
+Descreva o impacto positivo após a implementação:
+- No time
+- No processo
+- Na entrega de valor
+
+### Critérios de Aceitação
+CA1 - [Critério mensurável]
+Dado que [situação atual]
+Quando [melhoria implementada]
+Então [resultado esperado com métrica]
+
+### Riscos e Mitigações
+Liste possíveis riscos na implementação e como mitigá-los.
+
+### Complexidade
+Pontos: {complexidade}
+</mandatory_structure>
+
+Retorne APENAS o Markdown da história, sem texto adicional.
+"""
+        return prompt.strip()
+
+    def _build_fix_prompt(self, form_data: Dict[str, Any]) -> str:
+        """
+        Constrói prompt para histórias do tipo Fix/Bug/Incidente.
+
+        Args:
+            form_data: Dados do formulário Fix
+
+        Returns:
+            Prompt formatado
+        """
+        titulo = form_data.get('titulo', '')
+        descricao = form_data.get('fix_descricao', '')
+        passos = form_data.get('fix_passos_reproduzir', [])
+        esperado = form_data.get('fix_comportamento_esperado', '')
+        atual = form_data.get('fix_comportamento_atual', '')
+        ambiente = form_data.get('fix_ambiente', '')
+        severidade = form_data.get('fix_severidade', '')
+        logs = form_data.get('fix_logs', '')
+        complexidade = form_data.get('complexidade', 5)
+        fix_images = form_data.get('fix_images', [])
+
+        passos_formatados = "\n".join(f"{i+1}. {p}" for i, p in enumerate(passos) if p)
+
+        # Texto sobre imagens anexadas
+        imagens_info = ""
+        if fix_images:
+            nomes_imagens = [img.get('name', 'imagem') for img in fix_images]
+            imagens_info = f"""
+<imagens_anexadas>
+Foram anexadas {len(fix_images)} imagem(ns) como evidência do bug:
+{chr(10).join(f"- {nome}" for nome in nomes_imagens)}
+
+IMPORTANTE: As imagens serão inseridas automaticamente na história depois.
+NÃO descreva o conteúdo das imagens na seção de Evidências.
+Apenas mencione que há evidências visuais anexadas e foque nos logs/erros textuais se houver.
+</imagens_anexadas>
+"""
+
+        prompt = f"""
+<task>
+Você é um Product Owner sênior especializado em metodologias ágeis.
+Gere uma história de usuário do tipo FIX/BUG/INCIDENTE completa e profissional.
+</task>
+
+<critical_rules>
+1. NUNCA ADICIONAR EMOJIS
+2. SER PRECISO NA DESCRIÇÃO DO PROBLEMA
+3. FOCAR NA CORREÇÃO, NÃO EM NOVAS FUNCIONALIDADES
+4. INCLUIR CRITÉRIOS DE VERIFICAÇÃO DA CORREÇÃO
+5. NÃO DESCREVER O CONTEÚDO DAS IMAGENS - elas serão inseridas automaticamente depois
+</critical_rules>
+
+<input_data>
+<titulo>{titulo}</titulo>
+<descricao_bug>{descricao}</descricao_bug>
+<passos_reproduzir>
+{passos_formatados}
+</passos_reproduzir>
+<comportamento_esperado>{esperado}</comportamento_esperado>
+<comportamento_atual>{atual}</comportamento_atual>
+<ambiente_afetado>{ambiente}</ambiente_afetado>
+<severidade>{severidade}</severidade>
+<logs_evidencias>{logs}</logs_evidencias>
+<complexidade>{complexidade}</complexidade>
+{imagens_info}
+</input_data>
+
+<mandatory_structure>
+## [Título]
+
+### Descrição do Problema
+Descreva o bug/incidente de forma clara e técnica.
+Inclua contexto sobre quando foi identificado e impacto.
+
+### Severidade e Impacto
+**Severidade:** {severidade}
+**Ambiente:** {ambiente}
+
+Descreva o impacto:
+- Usuários afetados
+- Funcionalidades comprometidas
+- Impacto no negócio
+
+### Passos para Reproduzir
+{passos_formatados if passos_formatados else "1. [Passo 1]\n2. [Passo 2]\n3. [Passo 3]"}
+
+### Comportamento Esperado
+{esperado}
+
+### Comportamento Atual
+{atual}
+
+### Evidências
+{"(As imagens de evidência serão inseridas automaticamente aqui)" + chr(10) + chr(10) if fix_images else ""}{"**Logs/Mensagens de Erro:**" + chr(10) + f"```{chr(10)}{logs}{chr(10)}```" if logs else ""}{"Nenhuma evidência adicional fornecida." if not logs and not fix_images else ""}
+
+### Análise Técnica Sugerida
+Baseado na descrição{" e nas imagens anexadas" if fix_images else ""}, sugira possíveis causas raiz:
+- Causa potencial 1
+- Causa potencial 2
+- Área do código a investigar
+
+### Critérios de Aceitação
+CA1 - Bug Corrigido
+Dado que o bug foi identificado
+Quando a correção for aplicada
+Então o comportamento esperado deve ocorrer
+
+CA2 - Sem Regressão
+Dado que a correção foi aplicada
+Quando funcionalidades relacionadas forem testadas
+Então não deve haver regressão
+
+CA3 - Verificação em {ambiente}
+Dado que a correção foi deployada em {ambiente}
+Quando o cenário do bug for reproduzido
+Então o sistema deve funcionar corretamente
+
+### Cenários de Teste
+1. Cenário de verificação: Reproduzir bug e confirmar correção
+2. Cenário de regressão: Testar funcionalidades adjacentes
+3. Cenário de carga (se aplicável): Verificar sob condições similares
+
+### Complexidade
+Pontos: {complexidade}
+</mandatory_structure>
+
+Retorne APENAS o Markdown da história, sem texto adicional.
+"""
         return prompt.strip()

@@ -3,7 +3,8 @@ Controller responsável por orquestrar a criação de histórias.
 Segue padrão MVC e Single Responsibility Principle.
 """
 
-from typing import Dict, Any
+import re
+from typing import Dict, Any, List
 from models.story import Story
 from models.session_storage import SessionStorage
 from services.ai_service import AIService
@@ -46,15 +47,18 @@ class StoryController:
         """
         try:
             # Extrair dados do formulário
-            titulo = form_data["titulo"]
-            regras_negocio = form_data["regras_negocio"]
-            apis_servicos = form_data["apis_servicos"]
-            objetivos = form_data["objetivos"]
-            complexidade = form_data["complexidade"]
-            criterios_aceitacao = form_data["criterios_aceitacao"]
+            value_area = form_data.get("value_area", "Business")
+            titulo = form_data.get("titulo", "")
+            complexidade = form_data.get("complexidade", 5)
+
+            # Dados específicos para Business
+            regras_negocio = form_data.get("regras_negocio", [])
+            apis_servicos = form_data.get("apis_servicos", [])
+            objetivos = form_data.get("objetivos", {})
+            criterios_aceitacao = form_data.get("criterios_aceitacao", [])
             api_specs = form_data.get("api_specs", None)
 
-            # Chamar AI Service para gerar história
+            # Chamar AI Service para gerar história (passa form_data completo)
             historia_gerada = self.ai_service.generate_story(
                 titulo=titulo,
                 regras_negocio=regras_negocio,
@@ -62,18 +66,25 @@ class StoryController:
                 objetivos=objetivos,
                 complexidade=complexidade,
                 criterios_aceitacao=criterios_aceitacao,
-                api_specs=api_specs
+                api_specs=api_specs,
+                form_data=form_data
             )
+
+            # Se for Fix/Bug e tiver imagens, inserir as imagens reais na seção de evidências
+            fix_images = form_data.get('fix_images', [])
+            if value_area == 'Fix/Bug/Incidente' and fix_images:
+                historia_gerada = self._insert_images_in_story(historia_gerada, fix_images)
 
             # Criar objeto Story
             story = Story(
                 titulo=titulo,
-                regras_negocio=regras_negocio,
-                apis_servicos=apis_servicos,
-                objetivos=objetivos,
+                regras_negocio=regras_negocio if regras_negocio else [],
+                apis_servicos=apis_servicos if apis_servicos else [],
+                objetivos=objetivos if objetivos else {},
                 complexidade=complexidade,
-                criterios_aceitacao=criterios_aceitacao,
-                historia_gerada=historia_gerada
+                criterios_aceitacao=criterios_aceitacao if criterios_aceitacao else [],
+                historia_gerada=historia_gerada,
+                value_area=value_area
             )
 
             # Salvar história no SessionStorage (ETAPA 3)
@@ -125,3 +136,72 @@ class StoryController:
             complexidade=form_data.get("complexidade", 0),
             criterios_aceitacao=form_data.get("criterios_aceitacao", [])
         )
+
+    def _insert_images_in_story(self, historia: str, images: List[Dict[str, Any]]) -> str:
+        """
+        Insere as imagens reais na seção de Evidências da história.
+
+        Args:
+            historia: História gerada em Markdown
+            images: Lista de imagens em formato {name, type, data}
+
+        Returns:
+            História com imagens inseridas
+        """
+        if not images:
+            return historia
+
+        # Criar bloco de imagens em Markdown (base64 inline)
+        images_markdown = "\n\n**Imagens Anexadas:**\n\n"
+        for i, img in enumerate(images):
+            img_name = img.get('name', f'Evidência {i+1}')
+            img_type = img.get('type', 'image/png')
+            img_data = img.get('data', '')
+
+            if img_data:
+                # Sintaxe Markdown para imagem base64 inline
+                images_markdown += f"**{img_name}:**\n\n"
+                images_markdown += f"![{img_name}](data:{img_type};base64,{img_data})\n\n"
+
+        # Encontrar a seção de Evidências e inserir as imagens
+        # Padrão: ### Evidências seguido de conteúdo até a próxima seção ###
+        evidencias_pattern = r'(### Evid[êe]ncias?\s*\n)'
+
+        if re.search(evidencias_pattern, historia, re.IGNORECASE):
+            # Inserir imagens logo após o título da seção de Evidências
+            historia = re.sub(
+                evidencias_pattern,
+                r'\1' + images_markdown,
+                historia,
+                count=1,
+                flags=re.IGNORECASE
+            )
+        else:
+            # Se não encontrar seção de Evidências, adicionar antes de "Análise Técnica"
+            analise_pattern = r'(### An[áa]lise T[ée]cnica)'
+            if re.search(analise_pattern, historia, re.IGNORECASE):
+                evidencias_section = f"\n### Evidências\n{images_markdown}\n"
+                historia = re.sub(
+                    analise_pattern,
+                    evidencias_section + r'\1',
+                    historia,
+                    count=1,
+                    flags=re.IGNORECASE
+                )
+            else:
+                # Fallback: adicionar no final antes de Complexidade
+                complexidade_pattern = r'(### Complexidade)'
+                if re.search(complexidade_pattern, historia, re.IGNORECASE):
+                    evidencias_section = f"\n### Evidências\n{images_markdown}\n"
+                    historia = re.sub(
+                        complexidade_pattern,
+                        evidencias_section + r'\1',
+                        historia,
+                        count=1,
+                        flags=re.IGNORECASE
+                    )
+                else:
+                    # Último fallback: adicionar no final
+                    historia += f"\n\n### Evidências\n{images_markdown}"
+
+        return historia

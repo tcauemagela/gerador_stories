@@ -477,6 +477,9 @@ def _render_create_story_tab(story_controller: StoryController, editor_controlle
                     # IMPORTANTE: Inicializar primeira versão (ETAPA 2)
                     editor_controller.initialize_first_version(story_dict)
 
+                    # Marcar que história foi gerada com sucesso
+                    st.session_state.story_generated_success = True
+
                     st.rerun()
                 else:
                     # Erro - exibir mensagem apropriada
@@ -486,6 +489,29 @@ def _render_create_story_tab(story_controller: StoryController, editor_controlle
                         error_type=error_type
                     )
     else:
+        # Verificar se história foi gerada com sucesso (mostrar mensagem)
+        if st.session_state.get('story_generated_success', False):
+            st.balloons()
+            st.markdown("""
+                <div style="
+                    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+                    padding: 1.5rem;
+                    border-radius: 12px;
+                    margin-bottom: 1.5rem;
+                    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+                    text-align: center;
+                ">
+                    <h3 style="color: white; margin: 0; font-weight: 700;">
+                        Historia gerada com sucesso!
+                    </h3>
+                    <p style="color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0;">
+                        Confira o resultado abaixo
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+            # Limpar flag para não mostrar novamente
+            st.session_state.story_generated_success = False
+
         # Mostrar história gerada + botões de ação
         # Converter dict para Story object para compatibilidade com story_display_view
         from datetime import datetime

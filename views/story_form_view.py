@@ -14,6 +14,10 @@ def initialize_session_state():
     Inicializa o session_state com valores padrão.
     Deve ser chamado antes de renderizar o formulário.
     """
+    # Value Area (tipo de história)
+    if 'value_area' not in st.session_state:
+        st.session_state.value_area = "Business"
+
     if 'titulo' not in st.session_state:
         st.session_state.titulo = ""
 
@@ -66,6 +70,67 @@ def initialize_session_state():
 
     if 'objetivo_para_que' not in st.session_state:
         st.session_state.objetivo_para_que = ""
+
+    # Campo de Dependências (Business)
+    if 'has_dependencies' not in st.session_state:
+        st.session_state.has_dependencies = False
+
+    if 'dependencies' not in st.session_state:
+        st.session_state.dependencies = ""
+
+    # Campos específicos para Spike
+    if 'spike_pergunta' not in st.session_state:
+        st.session_state.spike_pergunta = ""
+
+    if 'spike_alternativas' not in st.session_state:
+        st.session_state.spike_alternativas = [""]
+
+    if 'spike_timebox' not in st.session_state:
+        st.session_state.spike_timebox = 8
+
+    if 'spike_output' not in st.session_state:
+        st.session_state.spike_output = "Documento de decisão"
+
+    if 'spike_criterios_sucesso' not in st.session_state:
+        st.session_state.spike_criterios_sucesso = [""]
+
+    # Campos específicos para Kaizen
+    if 'kaizen_processo' not in st.session_state:
+        st.session_state.kaizen_processo = ""
+
+    if 'kaizen_situacao_atual' not in st.session_state:
+        st.session_state.kaizen_situacao_atual = ""
+
+    if 'kaizen_meta' not in st.session_state:
+        st.session_state.kaizen_meta = ""
+
+    if 'kaizen_metricas' not in st.session_state:
+        st.session_state.kaizen_metricas = [""]
+
+    if 'kaizen_impacto' not in st.session_state:
+        st.session_state.kaizen_impacto = ""
+
+    # Campos específicos para Fix/Bug/Incidente
+    if 'fix_descricao' not in st.session_state:
+        st.session_state.fix_descricao = ""
+
+    if 'fix_passos_reproduzir' not in st.session_state:
+        st.session_state.fix_passos_reproduzir = [""]
+
+    if 'fix_comportamento_esperado' not in st.session_state:
+        st.session_state.fix_comportamento_esperado = ""
+
+    if 'fix_comportamento_atual' not in st.session_state:
+        st.session_state.fix_comportamento_atual = ""
+
+    if 'fix_ambiente' not in st.session_state:
+        st.session_state.fix_ambiente = "Produção"
+
+    if 'fix_severidade' not in st.session_state:
+        st.session_state.fix_severidade = "Média"
+
+    if 'fix_logs' not in st.session_state:
+        st.session_state.fix_logs = ""
 
 
 def render_multiple_text_areas(
@@ -152,6 +217,53 @@ def render_form() -> Dict[str, Any]:
         </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
+
+    # Seletor de Categoria da História
+    st.markdown("""
+        <div style="
+            background-color: rgba(236, 72, 153, 0.1);
+            border-left: 4px solid #EC4899;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Categoria da Historia</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    value_area_options = {
+        "Business": "Funcional - Entrega de valor ao usuário",
+        "Spike": "Exploratória - Investigação/pesquisa técnica",
+        "Kaizen": "Melhoria Contínua - Otimização de processos",
+        "Fix/Bug/Incidente": "Corretiva - Correção de bugs e incidentes"
+    }
+
+    st.session_state.value_area = st.selectbox(
+        "Value Area",
+        options=list(value_area_options.keys()),
+        format_func=lambda x: f"{x} - {value_area_options[x]}",
+        index=list(value_area_options.keys()).index(st.session_state.value_area),
+        label_visibility="collapsed",
+        key="value_area_select"
+    )
+    st.markdown("---")
+
+    # Renderizar campos baseados no Value Area selecionado
+    if st.session_state.value_area == "Business":
+        return _render_business_form()
+    elif st.session_state.value_area == "Spike":
+        return _render_spike_form()
+    elif st.session_state.value_area == "Kaizen":
+        return _render_kaizen_form()
+    elif st.session_state.value_area == "Fix/Bug/Incidente":
+        return _render_fix_form()
+
+    return None
+
+
+def _render_business_form() -> Dict[str, Any]:
+    """Renderiza formulário para histórias Business (funcionais)."""
 
     # Campo 1: Título (único, sem múltiplas entradas)
     st.markdown("""
@@ -559,6 +671,37 @@ def render_form() -> Dict[str, Any]:
 
     st.markdown("---")
 
+    # Campo de Dependências
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Possui dependências de outras equipes/sistemas?</strong>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.session_state.has_dependencies = st.checkbox(
+        "Sim, possui dependências",
+        value=st.session_state.has_dependencies,
+        key="has_dependencies_checkbox"
+    )
+
+    if st.session_state.has_dependencies:
+        st.session_state.dependencies = st.text_area(
+            "Dependências",
+            value=st.session_state.dependencies,
+            placeholder="Descreva as dependências (ex: API do time de Pagamentos, Aprovação do time de Segurança, Deploy do serviço X...)",
+            label_visibility="collapsed",
+            height=100,
+            key="dependencies_input"
+        )
+
+    st.markdown("---")
+
     # Exibir erros de validação (se houver)
     if st.session_state.validation_errors:
         st.error("**Erros de validação:**")
@@ -570,7 +713,7 @@ def render_form() -> Dict[str, Any]:
     col1, col2, col3 = st.columns([2, 2, 2])
     with col2:
         submit_button = st.button(
-            "✨ Gerar História",
+            "Gerar Historia",
             type="primary",
             use_container_width=True
         )
@@ -601,13 +744,16 @@ def render_form() -> Dict[str, Any]:
             }
 
             form_data = {
+                "value_area": st.session_state.value_area,
                 "titulo": st.session_state.titulo.strip(),
                 "regras_negocio": [r.strip() for r in st.session_state.regras_negocio if r.strip()],
                 "apis_servicos": [a.strip() for a in st.session_state.apis_servicos if a.strip()],
                 "objetivos": objetivos_dict,
                 "complexidade": st.session_state.complexidade,
                 "criterios_aceitacao": [c.strip() for c in st.session_state.criterios_aceitacao if c.strip()],
-                "is_api": st.session_state.is_api
+                "is_api": st.session_state.is_api,
+                "has_dependencies": st.session_state.has_dependencies,
+                "dependencies": st.session_state.dependencies.strip() if st.session_state.has_dependencies else ""
             }
 
             # Adicionar dados da API se aplicável
@@ -643,6 +789,7 @@ def reset_form():
     Reseta o formulário para os valores iniciais.
     Útil após gerar uma história com sucesso.
     """
+    st.session_state.value_area = "Business"
     st.session_state.titulo = ""
     st.session_state.regras_negocio = [""]
     st.session_state.apis_servicos = [""]
@@ -663,3 +810,595 @@ def reset_form():
     st.session_state.api_path_param = ""
     st.session_state.api_body = ""
     st.session_state.api_formato_resposta = ""
+
+    # Resetar dependências
+    st.session_state.has_dependencies = False
+    st.session_state.dependencies = ""
+
+    # Resetar campos Spike
+    st.session_state.spike_pergunta = ""
+    st.session_state.spike_alternativas = [""]
+    st.session_state.spike_timebox = 8
+    st.session_state.spike_output = "Documento de decisão"
+    st.session_state.spike_criterios_sucesso = [""]
+
+    # Resetar campos Kaizen
+    st.session_state.kaizen_processo = ""
+    st.session_state.kaizen_situacao_atual = ""
+    st.session_state.kaizen_meta = ""
+    st.session_state.kaizen_metricas = [""]
+    st.session_state.kaizen_impacto = ""
+
+    # Resetar campos Fix
+    st.session_state.fix_descricao = ""
+    st.session_state.fix_passos_reproduzir = [""]
+    st.session_state.fix_comportamento_esperado = ""
+    st.session_state.fix_comportamento_atual = ""
+    st.session_state.fix_ambiente = "Produção"
+    st.session_state.fix_severidade = "Média"
+    st.session_state.fix_logs = ""
+
+
+def _render_spike_form() -> Dict[str, Any]:
+    """Renderiza formulário para histórias Spike (exploratórias)."""
+
+    # Título
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Título da Investigação</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.titulo = st.text_input(
+        "Título",
+        value=st.session_state.titulo,
+        max_chars=100,
+        placeholder="Ex: Spike - Avaliar viabilidade de migração para GraphQL",
+        label_visibility="collapsed"
+    )
+    st.markdown("---")
+
+    # Pergunta/Hipótese a validar
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Pergunta/Hipótese a Validar</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.spike_pergunta = st.text_area(
+        "Pergunta",
+        value=st.session_state.spike_pergunta,
+        placeholder="Ex: É viável migrar nossa API REST para GraphQL sem impactar os clientes existentes?",
+        label_visibility="collapsed",
+        height=100
+    )
+    st.markdown("---")
+
+    # Alternativas a investigar
+    render_multiple_text_areas(
+        label="Alternativas/Tecnologias a Investigar",
+        key_prefix="spike_alt",
+        state_key="spike_alternativas",
+        placeholder="Ex: Apollo Server, Hasura, AWS AppSync..."
+    )
+
+
+    # Output esperado
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Output Esperado</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.spike_output = st.selectbox(
+        "Output",
+        options=["Documento de decisão", "POC funcional", "Relatório técnico", "Apresentação para o time", "Outro"],
+        index=["Documento de decisão", "POC funcional", "Relatório técnico", "Apresentação para o time", "Outro"].index(st.session_state.spike_output),
+        label_visibility="collapsed"
+    )
+    st.markdown("---")
+
+    # Critérios de sucesso
+    render_multiple_text_areas(
+        label="Critérios de Sucesso da Investigação",
+        key_prefix="spike_crit",
+        state_key="spike_criterios_sucesso",
+        placeholder="Ex: Identificar se a solução atende aos requisitos de performance..."
+    )
+
+    # Botão de submissão
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col2:
+        submit_button = st.button(
+            "Gerar Historia Spike",
+            type="primary",
+            use_container_width=True
+        )
+
+    if submit_button:
+        if not st.session_state.titulo.strip():
+            st.error("Título é obrigatório")
+            return None
+        if not st.session_state.spike_pergunta.strip():
+            st.error("Pergunta/Hipótese é obrigatória")
+            return None
+
+        form_data = {
+            "value_area": "Spike",
+            "titulo": st.session_state.titulo.strip(),
+            "spike_pergunta": st.session_state.spike_pergunta.strip(),
+            "spike_alternativas": [a.strip() for a in st.session_state.spike_alternativas if a.strip()],
+            "spike_output": st.session_state.spike_output,
+            "spike_criterios_sucesso": [c.strip() for c in st.session_state.spike_criterios_sucesso if c.strip()]
+        }
+        return form_data
+
+    return None
+
+
+def _render_kaizen_form() -> Dict[str, Any]:
+    """Renderiza formulário para histórias Kaizen (melhoria contínua)."""
+
+    # Título
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Título da Melhoria</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.titulo = st.text_input(
+        "Título",
+        value=st.session_state.titulo,
+        max_chars=100,
+        placeholder="Ex: Kaizen - Reduzir tempo de deploy em 50%",
+        label_visibility="collapsed"
+    )
+    st.markdown("---")
+
+    # Processo/Área a melhorar
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Processo/Área a Melhorar</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.kaizen_processo = st.text_area(
+        "Processo",
+        value=st.session_state.kaizen_processo,
+        placeholder="Ex: Pipeline de CI/CD, processo de code review, fluxo de testes...",
+        label_visibility="collapsed",
+        height=80
+    )
+    st.markdown("---")
+
+    # Situação atual (baseline)
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Situação Atual (Baseline)</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.kaizen_situacao_atual = st.text_area(
+        "Situação Atual",
+        value=st.session_state.kaizen_situacao_atual,
+        placeholder="Ex: Deploy atual leva em média 45 minutos, com falhas em 20% das vezes...",
+        label_visibility="collapsed",
+        height=100
+    )
+    st.markdown("---")
+
+    # Meta desejada
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Meta Desejada</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.kaizen_meta = st.text_area(
+        "Meta",
+        value=st.session_state.kaizen_meta,
+        placeholder="Ex: Reduzir tempo de deploy para 20 minutos com taxa de falha < 5%...",
+        label_visibility="collapsed",
+        height=80
+    )
+    st.markdown("---")
+
+    # Métricas de sucesso
+    render_multiple_text_areas(
+        label="Métricas de Sucesso",
+        key_prefix="kaizen_met",
+        state_key="kaizen_metricas",
+        placeholder="Ex: Tempo médio de deploy, taxa de falha, satisfação do time..."
+    )
+
+    # Impacto esperado
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Impacto Esperado no Time/Processo</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.kaizen_impacto = st.text_area(
+        "Impacto",
+        value=st.session_state.kaizen_impacto,
+        placeholder="Ex: Mais tempo para desenvolvimento, menos retrabalho, maior confiança no processo...",
+        label_visibility="collapsed",
+        height=80
+    )
+    st.markdown("---")
+
+    # Complexidade
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Complexidade Estimada (pontos)</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.complexidade = st.number_input(
+        "Complexidade",
+        min_value=1,
+        max_value=21,
+        value=st.session_state.complexidade,
+        step=1,
+        label_visibility="collapsed",
+        key="kaizen_complexidade"
+    )
+    st.markdown("---")
+
+    # Botão de submissão
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col2:
+        submit_button = st.button(
+            "Gerar Historia Kaizen",
+            type="primary",
+            use_container_width=True
+        )
+
+    if submit_button:
+        if not st.session_state.titulo.strip():
+            st.error("Título é obrigatório")
+            return None
+        if not st.session_state.kaizen_processo.strip():
+            st.error("Processo/Área é obrigatório")
+            return None
+
+        form_data = {
+            "value_area": "Kaizen",
+            "titulo": st.session_state.titulo.strip(),
+            "kaizen_processo": st.session_state.kaizen_processo.strip(),
+            "kaizen_situacao_atual": st.session_state.kaizen_situacao_atual.strip(),
+            "kaizen_meta": st.session_state.kaizen_meta.strip(),
+            "kaizen_metricas": [m.strip() for m in st.session_state.kaizen_metricas if m.strip()],
+            "kaizen_impacto": st.session_state.kaizen_impacto.strip(),
+            "complexidade": st.session_state.complexidade
+        }
+        return form_data
+
+    return None
+
+
+def _render_fix_form() -> Dict[str, Any]:
+    """Renderiza formulário para histórias Fix/Bug/Incidente."""
+
+    # Título
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Título do Bug/Incidente</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.titulo = st.text_input(
+        "Título",
+        value=st.session_state.titulo,
+        max_chars=100,
+        placeholder="Ex: Fix - Erro 500 ao processar pagamentos com cartão internacional",
+        label_visibility="collapsed"
+    )
+    st.markdown("---")
+
+    # Descrição do bug
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Descrição do Bug/Erro</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.fix_descricao = st.text_area(
+        "Descrição",
+        value=st.session_state.fix_descricao,
+        placeholder="Descreva o bug/erro de forma clara e objetiva...",
+        label_visibility="collapsed",
+        height=100
+    )
+    st.markdown("---")
+
+    # Passos para reproduzir
+    render_multiple_text_areas(
+        label="Passos para Reproduzir",
+        key_prefix="fix_passos",
+        state_key="fix_passos_reproduzir",
+        placeholder="Ex: 1. Acessar tela de pagamento, 2. Selecionar cartão internacional..."
+    )
+
+    # Comportamento esperado
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Comportamento Esperado</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.fix_comportamento_esperado = st.text_area(
+        "Esperado",
+        value=st.session_state.fix_comportamento_esperado,
+        placeholder="Ex: O pagamento deveria ser processado com sucesso e exibir confirmação...",
+        label_visibility="collapsed",
+        height=80
+    )
+    st.markdown("---")
+
+    # Comportamento atual
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Comportamento Atual (O que está acontecendo)</strong>
+            <span style="color: #EC4899; margin-left: 0.25rem;">*</span>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.fix_comportamento_atual = st.text_area(
+        "Atual",
+        value=st.session_state.fix_comportamento_atual,
+        placeholder="Ex: Retorna erro 500 Internal Server Error e o pagamento não é processado...",
+        label_visibility="collapsed",
+        height=80
+    )
+    st.markdown("---")
+
+    # Ambiente e Severidade em colunas
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("""
+            <div style="
+                background-color: rgba(99, 102, 241, 0.1);
+                border-left: 4px solid #6366F1;
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                margin-bottom: 0.75rem;
+            ">
+                <strong style="color: #FFFFFF; font-size: 1.05rem;">Ambiente Afetado</strong>
+            </div>
+        """, unsafe_allow_html=True)
+        st.session_state.fix_ambiente = st.selectbox(
+            "Ambiente",
+            options=["Produção", "Homologação", "Desenvolvimento", "Todos"],
+            index=["Produção", "Homologação", "Desenvolvimento", "Todos"].index(st.session_state.fix_ambiente),
+            label_visibility="collapsed"
+        )
+
+    with col2:
+        st.markdown("""
+            <div style="
+                background-color: rgba(99, 102, 241, 0.1);
+                border-left: 4px solid #6366F1;
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                margin-bottom: 0.75rem;
+            ">
+                <strong style="color: #FFFFFF; font-size: 1.05rem;">Severidade</strong>
+            </div>
+        """, unsafe_allow_html=True)
+        st.session_state.fix_severidade = st.selectbox(
+            "Severidade",
+            options=["Crítica", "Alta", "Média", "Baixa"],
+            index=["Crítica", "Alta", "Média", "Baixa"].index(st.session_state.fix_severidade),
+            label_visibility="collapsed"
+        )
+
+    st.markdown("---")
+
+    # Logs/Screenshots
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Logs/Evidências (opcional)</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.fix_logs = st.text_area(
+        "Logs",
+        value=st.session_state.fix_logs,
+        placeholder="Cole aqui logs de erro, stack traces ou descreva evidências...",
+        label_visibility="collapsed",
+        height=120
+    )
+
+    # Upload de imagens/prints
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin: 0.75rem 0;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Prints/Imagens (opcional)</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    uploaded_files = st.file_uploader(
+        "Envie prints ou imagens do erro",
+        type=["png", "jpg", "jpeg", "gif", "webp"],
+        accept_multiple_files=True,
+        key="fix_images_uploader",
+        label_visibility="collapsed"
+    )
+
+    # Mostrar preview das imagens enviadas
+    if uploaded_files:
+        st.caption(f"{len(uploaded_files)} imagem(ns) anexada(s)")
+        cols = st.columns(min(len(uploaded_files), 3))
+        for i, file in enumerate(uploaded_files):
+            with cols[i % 3]:
+                st.image(file, caption=file.name, use_container_width=True)
+
+    # Armazenar referência dos arquivos no session_state
+    if 'fix_images' not in st.session_state:
+        st.session_state.fix_images = []
+    st.session_state.fix_images = uploaded_files if uploaded_files else []
+
+    st.markdown("---")
+
+    # Complexidade
+    st.markdown("""
+        <div style="
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid #6366F1;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Complexidade Estimada (pontos)</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.complexidade = st.number_input(
+        "Complexidade",
+        min_value=1,
+        max_value=21,
+        value=st.session_state.complexidade,
+        step=1,
+        label_visibility="collapsed",
+        key="fix_complexidade"
+    )
+    st.markdown("---")
+
+    # Botão de submissão
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col2:
+        submit_button = st.button(
+            "Gerar Historia Fix",
+            type="primary",
+            use_container_width=True
+        )
+
+    if submit_button:
+        if not st.session_state.titulo.strip():
+            st.error("Título é obrigatório")
+            return None
+        if not st.session_state.fix_descricao.strip():
+            st.error("Descrição do bug é obrigatória")
+            return None
+
+        # Processar imagens para envio (converter para base64)
+        fix_images_data = []
+        if st.session_state.fix_images:
+            import base64
+            for img_file in st.session_state.fix_images:
+                try:
+                    # Ler bytes da imagem
+                    img_bytes = img_file.getvalue()
+                    # Converter para base64
+                    img_base64 = base64.standard_b64encode(img_bytes).decode("utf-8")
+                    # Determinar media type
+                    file_type = img_file.type if img_file.type else "image/png"
+                    fix_images_data.append({
+                        "name": img_file.name,
+                        "type": file_type,
+                        "data": img_base64
+                    })
+                except Exception as e:
+                    st.warning(f"Erro ao processar imagem {img_file.name}: {str(e)}")
+
+        form_data = {
+            "value_area": "Fix/Bug/Incidente",
+            "titulo": st.session_state.titulo.strip(),
+            "fix_descricao": st.session_state.fix_descricao.strip(),
+            "fix_passos_reproduzir": [p.strip() for p in st.session_state.fix_passos_reproduzir if p.strip()],
+            "fix_comportamento_esperado": st.session_state.fix_comportamento_esperado.strip(),
+            "fix_comportamento_atual": st.session_state.fix_comportamento_atual.strip(),
+            "fix_ambiente": st.session_state.fix_ambiente,
+            "fix_severidade": st.session_state.fix_severidade,
+            "fix_logs": st.session_state.fix_logs.strip(),
+            "fix_images": fix_images_data,
+            "complexidade": st.session_state.complexidade
+        }
+        return form_data
+
+    return None

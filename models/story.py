@@ -28,13 +28,14 @@ class Story(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()))
     titulo: str = Field(..., min_length=1, max_length=100)
-    regras_negocio: List[str] = Field(..., min_length=1)
-    apis_servicos: List[str] = Field(..., min_length=1)
+    regras_negocio: List[str] = Field(default_factory=list)
+    apis_servicos: List[str] = Field(default_factory=list)
     objetivos: Dict[str, Any] = Field(default_factory=dict)
-    complexidade: int = Field(..., ge=1, le=21)
-    criterios_aceitacao: List[str] = Field(..., min_length=1)
+    complexidade: int = Field(default=5, ge=1, le=21)
+    criterios_aceitacao: List[str] = Field(default_factory=list)
     historia_gerada: str = Field(default="")
     created_at: datetime = Field(default_factory=datetime.now)
+    value_area: str = Field(default="Business")
 
     @field_validator("regras_negocio", "apis_servicos", "criterios_aceitacao")
     @classmethod
@@ -66,7 +67,8 @@ class Story(BaseModel):
             "complexidade": self.complexidade,
             "criterios_aceitacao": self.criterios_aceitacao,
             "historia_gerada": self.historia_gerada,
-            "created_at": self.created_at.isoformat()
+            "created_at": self.created_at.isoformat(),
+            "value_area": self.value_area
         }
 
     def to_json_export(self) -> Dict:
