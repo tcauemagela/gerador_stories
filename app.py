@@ -14,6 +14,7 @@ from views import editor_view, suggestions_view, version_view
 from views import story_list_view, export_view
 from utils.formatters import format_error_message
 from models.story import Story
+from services.invest_service import InvestService
 
 
 def initialize_app():
@@ -538,24 +539,37 @@ def _render_create_story_tab(story_controller: StoryController, editor_controlle
 
         st.markdown("---")
 
-        # Seção de possíveis melhorias
+        # Seção de possíveis melhorias (personalizada)
         with st.expander("💡 Possiveis Criterios de Melhoria", expanded=False):
-            st.markdown("""
-            **Sugestões para aprimorar sua história:**
+            # Gerar sugestões personalizadas usando InvestService
+            invest_service = InvestService()
+            invest_score = invest_service.validate_invest_local(story_dict)
 
-            1. **Clareza nos Critérios de Aceitação**
-               - Revise se todos os critérios estão objetivos e mensuráveis
+            st.markdown("**Sugestões personalizadas para sua história:**")
 
-            2. **Detalhamento Técnico**
-               - Verifique se as APIs e serviços estão bem especificados
+            # Mostrar pontos fracos identificados
+            if invest_score.weaknesses:
+                st.markdown("**Pontos que precisam de atenção:**")
+                for weakness in invest_score.weaknesses:
+                    st.markdown(f"- ⚠️ {weakness}")
+                st.markdown("")
 
-            3. **Testabilidade**
-               - Confirme se os cenários de teste cobrem casos de sucesso e erro
+            # Mostrar sugestões específicas
+            if invest_score.suggestions:
+                st.markdown("**Sugestões de melhoria:**")
+                for i, suggestion in enumerate(invest_score.suggestions, 1):
+                    st.markdown(f"{i}. {suggestion}")
+            else:
+                st.success("Sua história está bem estruturada! Nenhuma sugestão crítica identificada.")
 
-            4. **Complexidade Apropriada**
-               - Avalie se a pontuação reflete o esforço real da tarefa
-            """)
+            # Mostrar pontos fortes
+            if invest_score.strengths:
+                st.markdown("")
+                st.markdown("**Pontos fortes:**")
+                for strength in invest_score.strengths:
+                    st.markdown(f"- ✅ {strength}")
 
+            st.markdown("---")
             st.markdown("**Fazer alterações:**")
             st.info("Use a aba 'Editar' para modificar seções específicas ou regenerar partes da história")
 
