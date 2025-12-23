@@ -219,38 +219,85 @@ class InvestService:
         story: Dict,
         score: InvestScore
     ) -> List[str]:
-        """Gera sugestões básicas de melhoria."""
+        """Gera sugestões básicas de melhoria baseadas no conteúdo da história."""
         suggestions = []
+
+        titulo = story.get('titulo', 'a história')
+        historia_texto = story.get('historia_gerada', '').lower()
+        apis = story.get('apis_servicos', [])
+        regras = story.get('regras_negocio', [])
 
         # Sugestão baseada em complexidade
         if score.small < 70:
             complexidade = story.get('complexidade', 0)
-            suggestions.append(
-                f"Considere quebrar esta história em partes menores. "
-                f"Complexidade de {complexidade} pontos é muito alta para uma sprint."
-            )
+            if apis:
+                api_exemplo = apis[0] if apis else 'a API principal'
+                suggestions.append(
+                    f"Considere dividir '{titulo}' em histórias menores. "
+                    f"Por exemplo, separe a integração com {api_exemplo} em uma história dedicada. "
+                    f"Complexidade atual: {complexidade} pontos."
+                )
+            else:
+                suggestions.append(
+                    f"'{titulo}' tem complexidade de {complexidade} pontos. "
+                    f"Considere dividir em: 1) Backend/lógica, 2) Frontend/UI, 3) Integrações."
+                )
 
-        # Sugestão baseada em critérios
+        # Sugestão baseada em critérios - mais específica
         if score.testable < 80:
             num_criterios = len(story.get('criterios_aceitacao', []))
-            suggestions.append(
-                f"Adicione mais critérios de aceitação. "
-                f"Atualmente tem {num_criterios}, recomendado mínimo 3."
-            )
+            if 'api' in historia_texto or apis:
+                suggestions.append(
+                    f"Adicione critérios de aceitação para cenários de erro da API "
+                    f"(timeout, resposta inválida, autenticação falha). Atualmente: {num_criterios} critérios."
+                )
+            elif 'usuario' in historia_texto or 'login' in historia_texto:
+                suggestions.append(
+                    f"Adicione critérios para validação de entrada do usuário "
+                    f"(campos obrigatórios, formatos, limites). Atualmente: {num_criterios} critérios."
+                )
+            else:
+                suggestions.append(
+                    f"Adicione critérios de aceitação para cenários de borda e erros. "
+                    f"Atualmente: {num_criterios} critérios, recomendado mínimo 3."
+                )
 
-        # Sugestão baseada em objetivos
+        # Sugestão baseada em objetivos - mais específica
         if score.valuable < 80:
-            suggestions.append(
-                "Torne os objetivos de negócio/técnicos mais explícitos e mensuráveis."
-            )
+            if regras:
+                regra_exemplo = regras[0][:50] if regras else ''
+                suggestions.append(
+                    f"Quantifique o valor de negócio. Ex: para a regra '{regra_exemplo}...', "
+                    f"defina métricas como tempo de resposta esperado ou taxa de sucesso."
+                )
+            else:
+                suggestions.append(
+                    f"Defina métricas de sucesso mensuráveis para '{titulo}'. "
+                    f"Ex: tempo de carregamento < 2s, taxa de erro < 1%."
+                )
 
-        # Sugestão baseada em independência
+        # Sugestão baseada em independência - mais específica
         if score.independent < 80:
+            if 'depende' in historia_texto or 'após' in historia_texto:
+                suggestions.append(
+                    f"Identifique as dependências em '{titulo}' e crie mocks/stubs "
+                    f"para permitir desenvolvimento paralelo. Considere usar feature flags."
+                )
+
+        # Sugestões adicionais baseadas no conteúdo
+        if 'pesquisa' in historia_texto or 'busca' in historia_texto:
             suggestions.append(
-                "Reduza dependências de outras histórias para facilitar desenvolvimento paralelo."
+                "Para funcionalidade de busca: adicione critério para busca sem resultados, "
+                "limite de caracteres, e comportamento com caracteres especiais."
             )
 
-        return suggestions
+        if 'cadastro' in historia_texto or 'formulario' in historia_texto:
+            suggestions.append(
+                "Para formulários: especifique validações de cada campo, "
+                "mensagens de erro específicas, e comportamento ao perder conexão."
+            )
+
+        return suggestions[:5]  # Limitar a 5 sugestões
 
     def prepare_for_ai_validation(self, story: Dict[str, Any]) -> str:
         """
@@ -286,6 +333,29 @@ Avalie cada critério de 0 a 100:
 - Testable: Possui critérios de aceitação claros e testáveis?
 </criteria>
 
+<suggestions_guidelines>
+CRÍTICO: As sugestões DEVEM ser ESPECÍFICAS para ESTA história.
+
+Para cada sugestão você DEVE:
+1. Referenciar elementos CONCRETOS da história (APIs mencionadas, regras de negócio, funcionalidades)
+2. Propor melhorias ACIONÁVEIS e PRÁTICAS
+3. Dar exemplos específicos quando possível
+
+TIPOS DE SUGESTÕES ESPERADAS:
+- Critérios de aceitação adicionais específicos para a funcionalidade descrita
+- Edge cases específicos que a história deveria cobrir
+- Melhorias técnicas relacionadas às APIs/serviços mencionados
+- Validações de dados específicas para o contexto
+- Cenários de erro específicos para as operações descritas
+- Questões de segurança relevantes à funcionalidade
+- Melhorias de UX específicas para o fluxo descrito
+
+NUNCA dê sugestões genéricas como:
+- "Adicione mais critérios de aceitação" (sem especificar quais)
+- "Melhore a documentação" (sem dizer o quê)
+- "Considere edge cases" (sem exemplificar)
+</suggestions_guidelines>
+
 <output_format>
 Retorne APENAS JSON válido neste formato exato:
 {{
@@ -295,15 +365,20 @@ Retorne APENAS JSON válido neste formato exato:
   "estimable": {{"score": 0-100, "justification": "explicação objetiva"}},
   "small": {{"score": 0-100, "justification": "explicação objetiva"}},
   "testable": {{"score": 0-100, "justification": "explicação objetiva"}},
-  "strengths": ["ponto forte 1", "ponto forte 2"],
-  "weaknesses": ["ponto fraco 1", "ponto fraco 2"],
-  "suggestions": ["sugestão específica 1", "sugestão específica 2"]
+  "strengths": ["ponto forte específico 1", "ponto forte específico 2"],
+  "weaknesses": ["ponto fraco específico 1", "ponto fraco específico 2"],
+  "suggestions": [
+    "Sugestão específica com referência a elemento da história",
+    "Outra sugestão específica com exemplo concreto",
+    "Mais uma sugestão acionável relacionada ao contexto"
+  ]
 }}
 </output_format>
 
 <important>
-- Seja específico nas justificativas
-- Sugestões devem ser acionáveis
+- Seja específico nas justificativas - cite elementos da história
+- Sugestões DEVEM mencionar elementos concretos da história (nomes de APIs, campos, regras)
+- Mínimo 3, máximo 5 sugestões - todas específicas e acionáveis
 - Use dados da história, não invente
 - Retorne APENAS o JSON, sem texto antes ou depois
 </important>

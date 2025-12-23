@@ -864,6 +864,83 @@ def _render_spike_form() -> Dict[str, Any]:
     )
     st.markdown("---")
 
+    # Campos de Objetivos (Como/Quero/Para que)
+    st.markdown("""
+        <div style="
+            background-color: rgba(236, 72, 153, 0.1);
+            border-left: 4px solid #EC4899;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Objetivos (Como/Quero/Para que)</strong>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Subseção: Como
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Como:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_como = st.text_area(
+        "Como",
+        value=st.session_state.objetivo_como,
+        placeholder="Ex: Como arquiteto de software...",
+        label_visibility="collapsed",
+        height=60,
+        key="spike_obj_como"
+    )
+
+    # Subseção: Quero
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Quero:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_quero = st.text_area(
+        "Quero",
+        value=st.session_state.objetivo_quero,
+        placeholder="Ex: Quero investigar a viabilidade de migração para GraphQL...",
+        label_visibility="collapsed",
+        height=60,
+        key="spike_obj_quero"
+    )
+
+    # Subseção: Para que
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Para que:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_para_que = st.text_area(
+        "Para que",
+        value=st.session_state.objetivo_para_que,
+        placeholder="Ex: Para que possamos tomar uma decisão informada sobre a arquitetura...",
+        label_visibility="collapsed",
+        height=60,
+        key="spike_obj_para_que"
+    )
+    st.markdown("---")
+
     # Pergunta/Hipótese a validar
     st.markdown("""
         <div style="
@@ -941,9 +1018,16 @@ def _render_spike_form() -> Dict[str, Any]:
             st.error("Pergunta/Hipótese é obrigatória")
             return None
 
+        objetivos_dict = {
+            "como": st.session_state.objetivo_como.strip(),
+            "quero": st.session_state.objetivo_quero.strip(),
+            "para_que": st.session_state.objetivo_para_que.strip()
+        }
+
         form_data = {
             "value_area": "Spike",
             "titulo": st.session_state.titulo.strip(),
+            "objetivos": objetivos_dict,
             "spike_pergunta": st.session_state.spike_pergunta.strip(),
             "spike_alternativas": [a.strip() for a in st.session_state.spike_alternativas if a.strip()],
             "spike_output": st.session_state.spike_output,
@@ -976,6 +1060,83 @@ def _render_kaizen_form() -> Dict[str, Any]:
         max_chars=100,
         placeholder="Ex: Kaizen - Reduzir tempo de deploy em 50%",
         label_visibility="collapsed"
+    )
+    st.markdown("---")
+
+    # Campos de Objetivos (Como/Quero/Para que)
+    st.markdown("""
+        <div style="
+            background-color: rgba(236, 72, 153, 0.1);
+            border-left: 4px solid #EC4899;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Objetivos (Como/Quero/Para que)</strong>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Subseção: Como
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Como:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_como = st.text_area(
+        "Como",
+        value=st.session_state.objetivo_como,
+        placeholder="Ex: Como time de desenvolvimento...",
+        label_visibility="collapsed",
+        height=60,
+        key="kaizen_obj_como"
+    )
+
+    # Subseção: Quero
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Quero:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_quero = st.text_area(
+        "Quero",
+        value=st.session_state.objetivo_quero,
+        placeholder="Ex: Quero reduzir o tempo de deploy em 50%...",
+        label_visibility="collapsed",
+        height=60,
+        key="kaizen_obj_quero"
+    )
+
+    # Subseção: Para que
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Para que:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_para_que = st.text_area(
+        "Para que",
+        value=st.session_state.objetivo_para_que,
+        placeholder="Ex: Para que possamos entregar mais valor com menos tempo de espera...",
+        label_visibility="collapsed",
+        height=60,
+        key="kaizen_obj_para_que"
     )
     st.markdown("---")
 
@@ -1114,9 +1275,16 @@ def _render_kaizen_form() -> Dict[str, Any]:
             st.error("Processo/Área é obrigatório")
             return None
 
+        objetivos_dict = {
+            "como": st.session_state.objetivo_como.strip(),
+            "quero": st.session_state.objetivo_quero.strip(),
+            "para_que": st.session_state.objetivo_para_que.strip()
+        }
+
         form_data = {
             "value_area": "Kaizen",
             "titulo": st.session_state.titulo.strip(),
+            "objetivos": objetivos_dict,
             "kaizen_processo": st.session_state.kaizen_processo.strip(),
             "kaizen_situacao_atual": st.session_state.kaizen_situacao_atual.strip(),
             "kaizen_meta": st.session_state.kaizen_meta.strip(),
@@ -1151,6 +1319,83 @@ def _render_fix_form() -> Dict[str, Any]:
         max_chars=100,
         placeholder="Ex: Fix - Erro 500 ao processar pagamentos com cartão internacional",
         label_visibility="collapsed"
+    )
+    st.markdown("---")
+
+    # Campos de Objetivos (Como/Quero/Para que)
+    st.markdown("""
+        <div style="
+            background-color: rgba(236, 72, 153, 0.1);
+            border-left: 4px solid #EC4899;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        ">
+            <strong style="color: #FFFFFF; font-size: 1.05rem;">Objetivos (Como/Quero/Para que)</strong>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Subseção: Como
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Como:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_como = st.text_area(
+        "Como",
+        value=st.session_state.objetivo_como,
+        placeholder="Ex: Como usuário do sistema...",
+        label_visibility="collapsed",
+        height=60,
+        key="fix_obj_como"
+    )
+
+    # Subseção: Quero
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Quero:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_quero = st.text_area(
+        "Quero",
+        value=st.session_state.objetivo_quero,
+        placeholder="Ex: Quero que o bug seja corrigido...",
+        label_visibility="collapsed",
+        height=60,
+        key="fix_obj_quero"
+    )
+
+    # Subseção: Para que
+    st.markdown("""
+        <div style="
+            background-color: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8B5CF6;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        ">
+            <strong style="color: #E0E0E0; font-size: 0.95rem;">Para que:</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    st.session_state.objetivo_para_que = st.text_area(
+        "Para que",
+        value=st.session_state.objetivo_para_que,
+        placeholder="Ex: Para que eu possa realizar pagamentos sem erros...",
+        label_visibility="collapsed",
+        height=60,
+        key="fix_obj_para_que"
     )
     st.markdown("---")
 
@@ -1386,9 +1631,16 @@ def _render_fix_form() -> Dict[str, Any]:
                 except Exception as e:
                     st.warning(f"Erro ao processar imagem {img_file.name}: {str(e)}")
 
+        objetivos_dict = {
+            "como": st.session_state.objetivo_como.strip(),
+            "quero": st.session_state.objetivo_quero.strip(),
+            "para_que": st.session_state.objetivo_para_que.strip()
+        }
+
         form_data = {
             "value_area": "Fix/Bug/Incidente",
             "titulo": st.session_state.titulo.strip(),
+            "objetivos": objetivos_dict,
             "fix_descricao": st.session_state.fix_descricao.strip(),
             "fix_passos_reproduzir": [p.strip() for p in st.session_state.fix_passos_reproduzir if p.strip()],
             "fix_comportamento_esperado": st.session_state.fix_comportamento_esperado.strip(),

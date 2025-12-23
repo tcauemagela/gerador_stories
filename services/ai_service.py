@@ -315,25 +315,41 @@ SUA HISTÓRIA DEVE CONTER EXATAMENTE ESTAS SEÇÕES (SEM EMOJIS):
 1. TÍTULO (nível ##)
    Formato: ## [Título da Tarefa]
 
-2. CONTEXTO/PROBLEMA (nível ###)
+2. DECLARAÇÃO DE OBJETIVO (formato Como/Quero/Para que) - OBRIGATÓRIO NO INÍCIO
+   Formato em texto normal (mesma formatação do resto da história):
+
+   **Como** [persona/papel do usuário], **quero** [ação/funcionalidade desejada], **para que** [benefício/valor de negócio].
+
+   CRÍTICO: Esta seção DEVE aparecer IMEDIATAMENTE após o título, em um único parágrafo
+   Use os valores fornecidos em <objetivos> para preencher cada campo
+   Se algum campo não foi fornecido, use contexto para inferir de forma coerente
+   IMPORTANTE: Manter a mesma formatação visual do resto da história (sem quote, sem cor diferente)
+
+3. CONTEXTO/PROBLEMA (nível ###)
    Formato: ### Contexto
    Conteúdo: Situação atual baseada APENAS nos dados fornecidos
 
-3. OBJETIVO (nível ###)
+4. OBJETIVO (nível ###)
    Formato: ### Objetivo
    Conteúdo: O que se pretende alcançar (baseado nos objetivos fornecidos)
 
-4. REGRAS DE NEGÓCIO (nível ###)
+5. REGRAS DE NEGÓCIO (nível ###)
    Formato: ### Regras de Negocio
    Conteúdo: TODAS as regras fornecidas (bullet points)
    IMPORTANTE: Incluir TODAS sem omitir nenhuma
 
-5. APIS/SERVIÇOS (nível ###)
+6. SEPARADOR TÉCNICO (linha divisória)
+   Formato: ---
+   Seguido de: ### Sessão Técnica
+   Propósito: Indicar visualmente onde começa a parte técnica da história
+   IMPORTANTE: Usar título de nível ### para destaque visual adequado
+
+7. APIS/SERVIÇOS (nível ###)
    Formato: ### APIs e Servicos Necessarios
    Conteúdo: Listar TODAS as APIs fornecidas
    Descrição: Uso técnico baseado no contexto
 
-5.1. ESPECIFICAÇÕES DE API (nível #### - SUBSEÇÃO OBRIGATÓRIA SE especificacoes_api FORNECIDAS)
+7.1. ESPECIFICAÇÕES DE API (nível #### - SUBSEÇÃO OBRIGATÓRIA SE especificacoes_api FORNECIDAS)
    Formato: #### Especificacoes da API
    CRÍTICO: Se a tag <especificacoes_api> estiver presente nos dados de entrada, VOCÊ DEVE:
    - Criar esta subseção dentro de "APIs e Servicos Necessarios"
@@ -346,11 +362,11 @@ SUA HISTÓRIA DEVE CONTER EXATAMENTE ESTAS SEÇÕES (SEM EMOJIS):
    - NÃO omitir nenhum detalhe fornecido
    - Usar formatação markdown apropriada (código em blocos ```)
 
-6. OBJETIVOS TÉCNICOS (nível ###)
+8. OBJETIVOS TÉCNICOS (nível ###)
    Formato: ### Objetivos Tecnicos
    Conteúdo: TODOS os objetivos fornecidos (bullet points)
 
-7. CRITÉRIOS DE ACEITAÇÃO (nível ###)
+9. CRITÉRIOS DE ACEITAÇÃO (nível ###)
    Formato: ### Criterios de Aceitacao
    Conteúdo: Mínimo 3 critérios
 
@@ -374,22 +390,24 @@ SUA HISTÓRIA DEVE CONTER EXATAMENTE ESTAS SEÇÕES (SEM EMOJIS):
    - Caso de erro
    - Validação técnica
 
-8. CENÁRIOS DE TESTE (nível ###)
+10. CENÁRIOS DE TESTE (nível ###)
    Formato: ### Cenarios de Teste Sugeridos
-   Conteúdo: OBRIGATÓRIO mínimo 3 cenários
+   Conteúdo: OBRIGATÓRIO mínimo 5 cenários
 
-   1. Cenario de sucesso: [descrição objetiva]
-   2. Cenario de erro/excecao: [descrição objetiva]
-   3. Cenario edge case: [descrição objetiva]
+   1. Cenario de sucesso principal: [descrição objetiva do fluxo feliz]
+   2. Cenario de sucesso alternativo: [descrição de outro caminho válido]
+   3. Cenario de erro/excecao: [descrição de falha esperada]
+   4. Cenario de validacao: [descrição de validação de dados/regras]
+   5. Cenario edge case: [descrição de caso limite/borda]
 
-9. DEPENDÊNCIAS (nível ### - APENAS SE <dependencias> FORNECIDAS)
+11. DEPENDÊNCIAS (nível ### - APENAS SE <dependencias> FORNECIDAS)
    Formato: ### Dependencias
    Conteúdo: Se a tag <dependencias> estiver presente nos dados de entrada:
    - Listar todas as dependências de outras equipes/sistemas
    - Indicar impacto no cronograma se aplicável
    - Sugerir pontos de comunicação necessários
 
-10. COMPLEXIDADE (nível ###)
+12. COMPLEXIDADE (nível ###)
    Formato: ### Complexidade
    Conteúdo:
    Pontos: {complexidade}
@@ -427,13 +445,15 @@ FORMATAÇÃO:
 ANTES DE ENTREGAR, VERIFICAR:
 
 [ ] Nenhum emoji presente na história
-[ ] Todas as 9 seções obrigatórias presentes
+[ ] Declaração Como/Quero/Para que presente IMEDIATAMENTE após o título
+[ ] Todas as seções obrigatórias presentes (incluindo separador "Sessão Técnica")
+[ ] Separador técnico ("---" seguido de "### Sessão Técnica") presente antes das APIs
 [ ] TODAS as regras de negócio incluídas
 [ ] TODAS as APIs mencionadas detalhadas
 [ ] SE <especificacoes_api> presente: subseção "Especificacoes da API" incluída com TODOS os detalhes
 [ ] TODOS os objetivos incluídos
 [ ] TODOS os critérios fornecidos incluídos
-[ ] Mínimo 3 cenários de teste
+[ ] Mínimo 5 cenários de teste
 [ ] Nenhuma informação inventada
 [ ] Linguagem objetiva e técnica
 [ ] Formato Markdown correto
@@ -443,10 +463,30 @@ ANTES DE ENTREGAR, VERIFICAR:
 <generation_instructions>
 INSTRUÇÕES DE GERAÇÃO:
 
+PRINCÍPIO FUNDAMENTAL - ELABORAÇÃO INTELIGENTE:
+Você NÃO deve simplesmente copiar e colar o input do usuário. Você DEVE:
+- MANTER o significado e intenção original de tudo que foi fornecido
+- ELABORAR cada ponto com linguagem técnica profissional
+- ENRIQUECER com contexto relevante (sem inventar funcionalidades)
+- EXPANDIR descrições curtas em explicações claras e completas
+- CONECTAR os elementos entre si de forma coesa
+
+EXEMPLO DE ELABORAÇÃO:
+- Input do usuário: "API de busca de médicos"
+- RUIM (determinístico): "API de busca de médicos"
+- BOM (elaborado): "Endpoint de consulta que permite localizar profissionais de saúde cadastrados na plataforma, aplicando filtros por especialidade, localização geográfica e disponibilidade, retornando resultados paginados e ordenáveis"
+
+- Input do usuário: "Validar CPF"
+- RUIM (determinístico): "Validar CPF"
+- BOM (elaborado): "Implementar validação de CPF utilizando algoritmo oficial da Receita Federal, verificando dígitos verificadores e formato, com tratamento para CPFs inválidos ou já cadastrados no sistema"
+
+REGRA DE OURO: Cada frase da história gerada deve agregar valor técnico ou de contexto, nunca ser uma simples repetição do input.
+
 1. ANÁLISE:
    - Leia TODOS os inputs fornecidos
    - Identifique o tipo de implementação
    - Compreenda o CONTEXTO DE NEGÓCIO por trás da tarefa
+   - Identifique IMPLICAÇÕES TÉCNICAS não explícitas mas óbvias
 
 2. CONTEXTO (ENRIQUECER COM ANÁLISE):
    - Descreva a situação atual de forma CONTEXTUALIZADA
@@ -461,12 +501,14 @@ INSTRUÇÕES DE GERAÇÃO:
    - Não adicione tecnologias não mencionadas, mas DETALHE as mencionadas
    - Para cada regra de negócio, explique seu impacto técnico
    - Para cada API, descreva sua integração e uso no fluxo
+   - NUNCA usar frases genéricas - seja ESPECÍFICO ao contexto
 
 4. CRITÉRIOS DE ACEITAÇÃO (COMPLETOS E TESTÁVEIS):
-   - TRANSFORME critérios simples em critérios GHERKIN completos
+   - TRANSFORME critérios simples em critérios GHERKIN completos e detalhados
    - Adicione cenários de ERRO e EDGE CASES baseados nas regras
    - Cada critério deve ser VERIFICÁVEL e MENSURÁVEL
    - Inclua validações de dados, performance esperada, e tratamento de exceções
+   - Os critérios devem refletir a complexidade REAL da funcionalidade
 
 5. ESPECIFICAÇÕES DE API (SE FORNECIDAS):
    - Verifique se há tag <especificacoes_api> nos inputs
@@ -475,11 +517,12 @@ INSTRUÇÕES DE GERAÇÃO:
    - Usar blocos de código ```json para JSONs
    - Detalhar códigos de erro HTTP esperados (400, 401, 404, 500)
 
-6. CENÁRIOS DE TESTE (ABRANGENTES):
-   - Crie cenários que REALMENTE testem a funcionalidade
-   - Inclua dados de exemplo quando relevante
+6. CENÁRIOS DE TESTE (ABRANGENTES E ESPECÍFICOS):
+   - Crie cenários que REALMENTE testem a funcionalidade descrita
+   - Inclua dados de exemplo CONCRETOS quando relevante
    - Cubra fluxos principais, alternativos e de exceção
-   - Não omitir nenhum detalhe
+   - Cada cenário deve ser ÚNICO e testar um aspecto diferente
+   - Não use descrições genéricas - seja específico ao contexto da história
 
 3.2. INTERPRETAÇÃO DE MÉTODOS HTTP:
    Ao gerar especificações de API, você DEVE interpretar os campos de acordo com o método HTTP:
@@ -538,6 +581,8 @@ EXEMPLO DE FORMATO ESPERADO (SEM EMOJIS):
 
 ## Implementar autenticacao OAuth com Google
 
+**Como** desenvolvedor backend, **quero** implementar autenticacao OAuth 2.0 com Google, **para que** usuarios possam fazer login de forma segura e rapida usando suas contas Google.
+
 ### Contexto
 
 Atualmente o sistema utiliza autenticacao basica com usuario e senha.
@@ -553,6 +598,10 @@ Implementar fluxo de autenticacao OAuth 2.0 utilizando Google Identity Platform.
 - Sistema deve redirecionar para tela de consentimento do Google
 - Email do Google deve ser usado como identificador unico
 - Sessao deve expirar apos periodo definido
+
+---
+
+### Sessão Técnica
 
 ### APIs e Servicos Necessarios
 
@@ -611,9 +660,11 @@ Então sistema deve exibir mensagem de erro apropriada
 
 ### Cenarios de Teste Sugeridos
 
-1. Cenario de sucesso: Usuario completa fluxo OAuth e e autenticado com sucesso
-2. Cenario de erro: Usuario nega permissao e recebe mensagem apropriada
-3. Cenario edge case: Token expira durante sessao e sistema renova automaticamente
+1. Cenario de sucesso principal: Usuario completa fluxo OAuth e e autenticado com sucesso
+2. Cenario de sucesso alternativo: Usuario ja autenticado anteriormente e reconhecido automaticamente
+3. Cenario de erro: Usuario nega permissao e recebe mensagem apropriada
+4. Cenario de validacao: Email do Google ja cadastrado com outro metodo de login
+5. Cenario edge case: Token expira durante sessao e sistema renova automaticamente
 
 ### Complexidade
 
@@ -624,12 +675,17 @@ Pontos: 5
 CRÍTICO - LEMBRE-SE:
 
 1. SEM EMOJIS EM NENHUMA PARTE DA HISTÓRIA
-2. USAR APENAS INFORMAÇÕES FORNECIDAS
-3. NÃO INVENTAR NADA
-4. SER OBJETIVA E DIRETA
-5. INCLUIR TODAS AS SEÇÕES OBRIGATÓRIAS
-6. INCLUIR TODAS AS REGRAS/APIs/OBJETIVOS/CRITÉRIOS FORNECIDOS
-7. **ESPECIFICAÇÕES DE API**: Se a tag <especificacoes_api> estiver presente, OBRIGATORIAMENTE incluir subseção "#### Especificacoes da API" com TODOS os detalhes fornecidos (endpoint, parâmetros, formato de resposta em ```json, tratamento de erros, documentação)
+2. **COMO/QUERO/PARA QUE**: OBRIGATÓRIO incluir declaração de objetivo no formato:
+   **Como** [persona], **quero** [ação], **para que** [benefício].
+   Esta seção DEVE aparecer IMEDIATAMENTE após o título ## em um parágrafo normal (SEM quote >)
+3. USAR APENAS INFORMAÇÕES FORNECIDAS
+4. NÃO INVENTAR NADA
+5. SER OBJETIVA E DIRETA
+6. INCLUIR TODAS AS SEÇÕES OBRIGATÓRIAS
+7. INCLUIR TODAS AS REGRAS/APIs/OBJETIVOS/CRITÉRIOS FORNECIDOS
+8. **SEPARADOR TÉCNICO**: OBRIGATÓRIO incluir "---" seguido de "### Sessão Técnica" antes da seção de APIs
+9. **ESPECIFICAÇÕES DE API**: Se a tag <especificacoes_api> estiver presente, OBRIGATORIAMENTE incluir subseção "#### Especificacoes da API" com TODOS os detalhes fornecidos
+10. **CENÁRIOS DE TESTE**: OBRIGATÓRIO incluir mínimo 5 cenários de teste variados
 
 Retorne APENAS o Markdown da história, sem texto adicional antes ou depois.
 </final_reminder>
@@ -938,6 +994,12 @@ Retorne APENAS JSON array neste formato:
         output = form_data.get('spike_output', '')
         criterios_sucesso = form_data.get('spike_criterios_sucesso', [])
 
+        # Objetivos Como/Quero/Para que
+        objetivos = form_data.get('objetivos', {})
+        como = objetivos.get('como', '') if isinstance(objetivos, dict) else ''
+        quero = objetivos.get('quero', '') if isinstance(objetivos, dict) else ''
+        para_que = objetivos.get('para_que', '') if isinstance(objetivos, dict) else ''
+
         alternativas_formatadas = "\n".join(f"- {alt}" for alt in alternativas if alt)
         criterios_formatados = "\n".join(f"- {crit}" for crit in criterios_sucesso if crit)
 
@@ -965,10 +1027,17 @@ Gere uma história de usuário do tipo SPIKE (exploratória/investigação) comp
 <criterios_sucesso>
 {criterios_formatados}
 </criterios_sucesso>
+<objetivos>
+Como: {como}
+Quero: {quero}
+Para que: {para_que}
+</objetivos>
 </input_data>
 
 <mandatory_structure>
 ## [Título]
+
+**Como** [persona - use o valor de objetivos.como ou infira do contexto], **quero** [ação - use o valor de objetivos.quero ou infira do contexto], **para que** [benefício - use o valor de objetivos.para_que ou infira do contexto].
 
 ### Contexto
 Descreva o cenário que motivou esta investigação. Por que precisamos investigar isso?
@@ -981,6 +1050,10 @@ Se aplicável, liste hipóteses secundárias a serem validadas.
 ### Escopo da Investigação
 Liste especificamente o que SERÁ e o que NÃO SERÁ investigado.
 Defina limites claros para manter o foco.
+
+---
+
+### Sessão Técnica
 
 ### Alternativas a Avaliar
 Para cada alternativa fornecida, descreva:
@@ -1034,6 +1107,12 @@ Retorne APENAS o Markdown da história, sem texto adicional.
         impacto = form_data.get('kaizen_impacto', '')
         complexidade = form_data.get('complexidade', 5)
 
+        # Objetivos Como/Quero/Para que
+        objetivos = form_data.get('objetivos', {})
+        como = objetivos.get('como', '') if isinstance(objetivos, dict) else ''
+        quero = objetivos.get('quero', '') if isinstance(objetivos, dict) else ''
+        para_que = objetivos.get('para_que', '') if isinstance(objetivos, dict) else ''
+
         metricas_formatadas = "\n".join(f"- {m}" for m in metricas if m)
 
         prompt = f"""
@@ -1059,10 +1138,17 @@ Gere uma história de usuário do tipo KAIZEN (melhoria contínua) completa e pr
 </metricas_sucesso>
 <impacto_esperado>{impacto}</impacto_esperado>
 <complexidade>{complexidade}</complexidade>
+<objetivos>
+Como: {como}
+Quero: {quero}
+Para que: {para_que}
+</objetivos>
 </input_data>
 
 <mandatory_structure>
 ## [Título]
+
+**Como** [persona - use o valor de objetivos.como ou infira do contexto], **quero** [ação - use o valor de objetivos.quero ou infira do contexto], **para que** [benefício - use o valor de objetivos.para_que ou infira do contexto].
 
 ### Contexto
 Descreva o processo/área atual e por que precisa ser melhorado.
@@ -1079,6 +1165,10 @@ Descreva claramente o estado futuro esperado:
 - Métricas alvo
 - Melhorias específicas
 - Benefícios esperados
+
+---
+
+### Sessão Técnica
 
 ### Plano de Melhoria
 Liste as ações necessárias para atingir a meta:
@@ -1136,6 +1226,12 @@ Retorne APENAS o Markdown da história, sem texto adicional.
         complexidade = form_data.get('complexidade', 5)
         fix_images = form_data.get('fix_images', [])
 
+        # Objetivos Como/Quero/Para que
+        objetivos = form_data.get('objetivos', {})
+        como = objetivos.get('como', '') if isinstance(objetivos, dict) else ''
+        quero = objetivos.get('quero', '') if isinstance(objetivos, dict) else ''
+        para_que = objetivos.get('para_que', '') if isinstance(objetivos, dict) else ''
+
         passos_formatados = "\n".join(f"{i+1}. {p}" for i, p in enumerate(passos) if p)
 
         # Texto sobre imagens anexadas
@@ -1179,11 +1275,18 @@ Gere uma história de usuário do tipo FIX/BUG/INCIDENTE completa e profissional
 <severidade>{severidade}</severidade>
 <logs_evidencias>{logs}</logs_evidencias>
 <complexidade>{complexidade}</complexidade>
+<objetivos>
+Como: {como}
+Quero: {quero}
+Para que: {para_que}
+</objetivos>
 {imagens_info}
 </input_data>
 
 <mandatory_structure>
 ## [Título]
+
+**Como** [persona - use o valor de objetivos.como ou infira do contexto], **quero** [ação - use o valor de objetivos.quero ou infira do contexto], **para que** [benefício - use o valor de objetivos.para_que ou infira do contexto].
 
 ### Descrição do Problema
 Descreva o bug/incidente de forma clara e técnica.
@@ -1200,6 +1303,10 @@ Descreva o impacto:
 
 ### Passos para Reproduzir
 {passos_formatados if passos_formatados else "1. [Passo 1]\n2. [Passo 2]\n3. [Passo 3]"}
+
+---
+
+### Sessão Técnica
 
 ### Comportamento Esperado
 {esperado}
@@ -1232,10 +1339,12 @@ Dado que a correção foi deployada em {ambiente}
 Quando o cenário do bug for reproduzido
 Então o sistema deve funcionar corretamente
 
-### Cenários de Teste
-1. Cenário de verificação: Reproduzir bug e confirmar correção
-2. Cenário de regressão: Testar funcionalidades adjacentes
-3. Cenário de carga (se aplicável): Verificar sob condições similares
+### Cenarios de Teste Sugeridos
+1. Cenario de verificacao: Reproduzir bug e confirmar correcao
+2. Cenario de regressao: Testar funcionalidades adjacentes
+3. Cenario de validacao: Verificar dados/estados apos correcao
+4. Cenario de carga (se aplicavel): Verificar sob condicoes similares
+5. Cenario edge case: Testar cenarios de borda relacionados ao bug
 
 ### Complexidade
 Pontos: {complexidade}
